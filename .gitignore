@@ -13,4 +13,5 @@ __pycache__/
 .vscode/
 
 # Data (large/raw files often shouldn't live in git)
-data/raw/
+data/raw/*
+!data/raw/.gitkeep
