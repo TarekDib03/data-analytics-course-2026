@@ -1,0 +1,16 @@
+# Environments
+venv/
+env/
+.venv/
+__pycache__/
+*.pyc
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS/editor junk
+.DS_Store
+.vscode/
+
+# Data (large/raw files often shouldn't live in git)
+data/raw/
