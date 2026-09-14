@@ -1,6 +1,8 @@
 # Week 1 Teaching Component
 ## SQL Window Functions, Joins, CTEs, and Subqueries — Explained for a Beginner
 
+*Written as if explaining to a colleague who has never touched window functions before.*
+
 ---
 
 ## Introduction: Objectives and Learning Outcomes
@@ -490,3 +492,76 @@ SELECT NULL, NULL, NULL, SUM(quantity) FROM sales;  -- grand total
 | `CUBE` | Every possible combination | 2ⁿ (here: 8) |
 
 **The deeper lesson:** this is a clean example of why knowing *which* database engine you're actually working with matters. A query that's perfectly idiomatic, standard SQL in Postgres or SQL Server may simply not exist as a keyword in SQLite — meaning the underlying *concept* transfers, but the *syntax* doesn't. When working with a more full-featured engine professionally, reach for the native keyword; on SQLite, the `UNION ALL` replication is the honest workaround.
+
+---
+
+## Appendix A: Original Chinook Practice Queries
+
+These are the three from-scratch queries written against the Chinook database at the very start of Week 1 — before any of the Coursera guided projects. They're the foundation everything else in this document builds on, so they're preserved here in full rather than just referenced conceptually.
+
+**A.1 — Multi-table join:** track name, album title, and artist name.
+
+```sql
+SELECT t.Name as Track_Name, a.Title as Album_Title, ar.Name as Artist_Name
+FROM Track t
+JOIN Album a ON t.AlbumId = a.AlbumId
+JOIN Artist ar ON a.ArtistId = ar.ArtistId
+LIMIT 10;
+```
+*Uses table aliasing for readability and an explicit `INNER JOIN` (the default) across three tables.*
+
+**A.2 — Subquery/CTE: customers who spent more than the average total invoice amount.**
+
+First attempt, using a nested subquery inside `HAVING`:
+```sql
+SELECT I.CustomerId, C.FirstName, C.LastName, SUM(I.Total) AS Total_Spent
+FROM Invoice I
+JOIN Customer C ON I.CustomerId = C.CustomerId
+GROUP BY I.CustomerId, C.FirstName, C.LastName
+HAVING Total_Spent > (
+    SELECT AVG(Total_Spent)
+    FROM (
+        SELECT CustomerId, SUM(Total) AS Total_Spent
+        FROM Invoice
+        GROUP BY CustomerId
+    )
+);
+```
+
+Second attempt, solving the exact same logic with a CTE instead:
+```sql
+WITH customer_total_invoice AS (
+    SELECT CustomerId, total_amount
+    FROM (
+        SELECT CustomerId, SUM(Total) AS total_amount
+        FROM Invoice
+        GROUP BY CustomerId
+    )
+)
+SELECT CustomerId, total_amount
+FROM customer_total_invoice
+WHERE total_amount > (SELECT AVG(total_amount) FROM customer_total_invoice)
+ORDER BY total_amount DESC;
+```
+*Both are logically identical — the key insight both versions share is aggregating first (per-customer totals), then comparing against the average of those aggregates, not the average of raw invoice rows.*
+
+**A.3 — Window function: rank tracks within each genre by unit price.**
+
+```sql
+SELECT t.Name AS track_name,
+       g.Name AS genre,
+       UnitPrice,
+       RANK() OVER(PARTITION BY g.Name ORDER BY UnitPrice DESC) AS rank
+FROM Genre g
+JOIN Track t ON g.GenreId = t.GenreId;
+```
+*This is the query that surfaced the whole `RANK()` tie-handling investigation in Section 1 — running it revealed nearly every row ranked `1`, which led to discovering that most Chinook genres only contain a single distinct price point, making `RANK()`'s all-tied result mathematically correct rather than a bug.*
+
+**Diagnostic query used to confirm the tie explanation:**
+```sql
+SELECT g.Name AS genre,
+       COUNT(DISTINCT t.UnitPrice) AS distinct_prices_in_genre
+FROM Genre g
+JOIN Track t ON g.GenreId = t.GenreId
+GROUP BY g.Name;
+```
