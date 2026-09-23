@@ -1,8 +1,17 @@
+# Data Analytics Course 2026
+
+A 12-week applied data analytics course repo — SQL, statistics, causal inference,
+applied ML, and automation, built around real (often messy) public datasets in
+epidemiology, healthcare, education, and socioeconomic research.
+
+---
+
 ## Setup
 
 This repo does not include raw data files directly — they're either publicly
-downloadable or sourced from a Coursera guided project not intended for
-redistribution. Follow the steps below to regenerate everything locally.
+downloadable, sourced from a Coursera guided project not intended for
+redistribution, or licensed for reuse with attribution. Follow the steps below
+to regenerate everything locally.
 
 ### Chinook Database (Week 1, SQL fundamentals)
 
@@ -10,7 +19,7 @@ redistribution. Follow the steps below to regenerate everything locally.
    https://github.com/lerocha/chinook-database/releases
 2. Place it in `data/raw/`.
 
-### project-db.db (SQL Window Functions for Analytics)
+### project-db.db (Week 1, SQL Window Functions for Analytics)
 
 This dataset comes from the Coursera Guided Project "SQL Window Functions
 for Analytics." Its source files are not redistributed in this repo.
@@ -22,13 +31,26 @@ for Analytics." Its source files are not redistributed in this repo.
 2. Place all three files into `data/raw/`.
 3. From the repo root, run:
 ```bash
-   python src/build_project_db.py
+python src/build_project_db.py
 ```
    This creates `data/raw/project-db.db`, standardizing all column names
    to snake_case in the process (see `src/build_project_db.py` for details).
 
+### Diabetes 130-US Hospitals Dataset (Week 2, ambiguous mini-project)
+
+Source: UCI Machine Learning Repository, CC BY 4.0 (freely usable with
+attribution).
+https://archive.ics.uci.edu/dataset/296/diabetes-130-us-hospitals-for-years-1999-2008
+
+1. Download and unzip:
+   https://archive.ics.uci.edu/static/public/296/diabetes+130-us+hospitals+for+years+1999-2008.zip
+2. Place `diabetic_data.csv` and `IDS_mapping.csv` into `data/raw/`.
+3. Open `notebooks/week2_diabetes_readmission_exploration.ipynb` and run top
+   to bottom. See `docs/Week2_A1C_Readmission_Analysis.md` for the full
+   write-up, methodology, and findings.
+
 **Note:** `data/raw/` is git-ignored — none of the files above will appear
-in this repository. Only the *code* that builds/uses them is tracked.
+in this repository. Only the *code* that builds/uses/cleans them is tracked.
 
 ---
 
@@ -122,3 +144,49 @@ afterward is not sufficient, since the old commit still contains it in
 history. For a local development database like this one, the simplest fix is
 to change the actual password — far less effort than rewriting Git history,
 and it fully closes the exposure.
+
+---
+
+## Repository Structure
+
+```
+data-analytics-course-2026/
+├── .env                  <- secrets, git-ignored, never pushed
+├── .env.example          <- documents required variable names (safe to commit)
+├── .gitignore
+├── README.md
+├── requirements.txt
+├── data/
+│   └── raw/               <- git-ignored; see Setup above for how to populate
+├── docs/                  <- write-ups and reference material (see Documentation below)
+├── notebooks/             <- exploratory and per-week analysis notebooks
+└── src/                   <- reusable code, imported by notebooks (see Utilities below)
+```
+
+### Utilities in `src/`
+
+- **`build_project_db.py`** — builds `project-db.db` from a raw SQL script and
+  two CSVs, standardizing column names to snake_case automatically along the way.
+- **`migrate_sqlite_to_postgres.py`** — migrates any SQLite database's tables
+  into a PostgreSQL schema, with the same column-name standardization and
+  secure `.env`-based password handling.
+- **`data_cleaning.py`** — general-purpose missing-value-filling utilities
+  (`fill_missing_values`, `fill_vars`) for recoding NaNs to meaningful category
+  labels (e.g., "Not tested", "Unknown") rather than dropping or imputing them.
+
+### Documentation in `docs/`
+
+- **`Week1_Teaching_Component_SQL_Concepts.md`** — comprehensive SQL reference:
+  window functions, joins, CTEs/subqueries, aggregate functions, `GROUPING SETS`/
+  `ROLLUP`/`CUBE`, and data provenance/reproducibility, built from real queries
+  developed during Week 1 (Chinook + two Coursera guided projects).
+- **`Week2_A1C_Readmission_Analysis.md`** — full write-up of the Week 2
+  ambiguous mini-project: data cleaning rationale, statistical findings, and
+  multiple confounder robustness checks on the diabetes readmission dataset.
+- **`Week2_Teaching_Component_Confounders.md`** — the distinction between
+  *checking* a confounder (stratification) and *controlling* for one
+  (multivariate methods), illustrated with this course's own findings.
+- **`Week1_Day1_Git_Reference_Notes.md`** — Git/GitHub workflow reference from
+  the very first setup session (branching, `.gitignore` gotchas, debugging workflow).
+- **`12-Week_Data_Analytics_Course.md`** — the full course curriculum, week by
+  week, with topics, sources, and milestones.
